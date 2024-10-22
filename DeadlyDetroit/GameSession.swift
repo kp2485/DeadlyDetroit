@@ -21,7 +21,7 @@ import SwiftData
         self.player = player
         self.party = party
         self.currentLocation = location
-        self.encounters = []
+        self.encounters = location.generateEncounters()
     }
     
     func endSession() {
