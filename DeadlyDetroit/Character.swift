@@ -17,7 +17,7 @@ import SwiftData
     @Attribute var righteousness: Int // wisdom
     @Attribute var soul: Int // authenticity
     
-    @Attribute var inventory: [Item]
+    @Relationship var inventory: [Item]
     @Attribute var bread: Int // money
     
     init(name: String, health: Int = 100, bad: Int, groove: Int, soul: Int, mojo: Int, slick: Int,  righteousness: Int, inventory: [Item], bread: Int) {

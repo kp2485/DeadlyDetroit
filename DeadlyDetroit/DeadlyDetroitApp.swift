@@ -13,6 +13,13 @@ struct DeadlyDetroitApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
+            Player.self,
+            Score.self,
+            Character.self,
+            Party.self,
+            Encounter.self,
+            GameSession.self,
+            Location.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
