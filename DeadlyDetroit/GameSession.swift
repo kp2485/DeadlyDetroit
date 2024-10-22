@@ -14,14 +14,14 @@ import SwiftData
     @Relationship var player: Player
     @Relationship var party: Party
     @Relationship var currentLocation: Location
-    @Relationship var enemies: [Enemy]
+    @Relationship var encounters: [Encounter]
     
     init(player: Player, party: Party, location: Location) {
         self.dateStarted = Date()
         self.player = player
         self.party = party
         self.currentLocation = location
-        self.enemies = []
+        self.encounters = []
     }
     
     func endSession() {

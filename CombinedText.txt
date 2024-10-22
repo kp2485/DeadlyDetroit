@@ -1,0 +1,288 @@
+//
+//  Location.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import SwiftData
+
+@Model class Location {
+    @Attribute var name: String
+    @Attribute var dangerLevel: Int // Higher values indicate more dangerous areas
+    
+    init(name: String, dangerLevel: Int) {
+        self.name = name
+        self.dangerLevel = dangerLevel
+    }
+}
+
+//
+//  Score.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import Foundation
+import SwiftData
+
+@Model class Score {
+    @Attribute var value: Int
+    @Attribute var dateAchieved: Date
+    @Relationship var player: Player
+    
+    init(value: Int, player: Player) {
+        self.value = value
+        self.dateAchieved = Date()
+        self.player = player
+    }
+}
+
+//
+//  Item.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import Foundation
+import SwiftData
+
+@Model
+final class Item {
+    var timestamp: Date
+    
+    init(timestamp: Date) {
+        self.timestamp = timestamp
+    }
+}
+
+//
+//  Party.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import SwiftData
+
+@Model class Party {
+    @Relationship var characters: [Character]
+    
+    init() {
+        self.characters = []
+    }
+    
+    func totalHealth() -> Int {
+        return characters.reduce(0) { $0 + $1.health }
+    }
+}
+
+//
+//  Character.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import SwiftData
+
+@Model class Character {
+    @Attribute var name: String
+    @Attribute var health: Int
+    @Attribute var bad: Int  // strength
+    @Attribute var groove: Int // dexterity
+    @Attribute var mojo: Int // attractiveness
+    @Attribute var slick: Int // intelligence
+    @Attribute var righteousness: Int // wisdom
+    @Attribute var soul: Int // authenticity
+    
+    @Attribute var inventory: [Item]
+    @Attribute var bread: Int // money
+    
+    init(name: String, health: Int = 100, bad: Int, groove: Int, soul: Int, mojo: Int, slick: Int,  righteousness: Int, inventory: [Item], bread: Int) {
+        self.name = name
+        self.health = health
+        self.bad = bad
+        self.groove = groove
+        self.soul = soul
+        self.mojo = mojo
+        self.slick = slick
+        self.righteousness = righteousness
+        self.inventory = inventory
+        self.bread = bread
+    }
+}
+
+//
+//  Enemy.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import SwiftData
+
+@Model class Enemy {
+    @Attribute var name: String
+    @Attribute var health: Int
+    
+    init(name: String, health: Int) {
+        self.name = name
+        self.health = health
+    }
+}
+
+//
+//  DeadlyDetroitApp.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import SwiftUI
+import SwiftData
+
+@main
+struct DeadlyDetroitApp: App {
+    var sharedModelContainer: ModelContainer = {
+        let schema = Schema([
+            Item.self,
+        ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        .modelContainer(sharedModelContainer)
+    }
+}
+
+//
+//  Player.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import SwiftData
+
+@Model class Player {
+    @Attribute var name: String
+    @Relationship var scores: [Score]
+    @Relationship var gameSessions: [GameSession]
+    
+    init(name: String) {
+        self.name = name
+        self.scores = []
+        self.gameSessions = []
+    }
+}
+
+//
+//  ContentView.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import SwiftUI
+import SwiftData
+
+struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var items: [Item]
+
+    var body: some View {
+        NavigationSplitView {
+            List {
+                ForEach(items) { item in
+                    NavigationLink {
+                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
+                    } label: {
+                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+                    }
+                }
+                .onDelete(perform: deleteItems)
+            }
+#if os(macOS)
+            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
+#endif
+            .toolbar {
+#if os(iOS)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    EditButton()
+                }
+#endif
+                ToolbarItem {
+                    Button(action: addItem) {
+                        Label("Add Item", systemImage: "plus")
+                    }
+                }
+            }
+        } detail: {
+            Text("Select an item")
+        }
+    }
+
+    private func addItem() {
+        withAnimation {
+            let newItem = Item(timestamp: Date())
+            modelContext.insert(newItem)
+        }
+    }
+
+    private func deleteItems(offsets: IndexSet) {
+        withAnimation {
+            for index in offsets {
+                modelContext.delete(items[index])
+            }
+        }
+    }
+}
+
+#Preview {
+    ContentView()
+        .modelContainer(for: Item.self, inMemory: true)
+}
+
+//
+//  GameSession.swift
+//  DeadlyDetroit
+//
+//  Created by Kyle Peterson on 10/20/24.
+//
+
+import Foundation
+import SwiftData
+
+@Model class GameSession {
+    @Attribute var dateStarted: Date
+    @Attribute var dateEnded: Date?
+    @Relationship var player: Player
+    @Relationship var party: Party
+    @Relationship var currentLocation: Location
+    @Relationship var enemies: [Enemy]
+    
+    init(player: Player, party: Party, location: Location) {
+        self.dateStarted = Date()
+        self.player = player
+        self.party = party
+        self.currentLocation = location
+        self.enemies = []
+    }
+    
+    func endSession() {
+        self.dateEnded = Date()
+    }
+}
+
